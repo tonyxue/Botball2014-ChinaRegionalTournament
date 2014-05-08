@@ -4,7 +4,7 @@ E-mail: xuezhaoxin@rdfz.cn
 The code is released under GUN LGPL v3 license, please see "LICENSE" for details.
 */
 #include <stdio.h>
-#include "globalVariables.h"
+#include "globalConstants.h"
 #include "initFunc.c"
 
 int xyDiff(int channel,int size)
