@@ -5,7 +5,15 @@ The code is released under GUN LGPL v3 license, please see "LICENSE" for details
 */
 #include <stdio.h>
 #include "globalConstants.h"
-#include "initFunc.c"
+#include "initializations.c"
+#include "lightDetection.c"
+int run=0,stop=0;//indicator for whether the game has started and stopped
+
+int blackLine()
+{
+	if(analog10(blackLineSensorPort)<blackLineCriticalValue) return 1;// Return TRUE when black color is detected
+	if(analog10(blackLineSensorPort)>blackLineCriticalValue) return 0;// Return FALSE when white color is detected
+}
 
 int xyDiff(int channel,int size)
 {
@@ -21,13 +29,18 @@ int xyDiff(int channel,int size)
 void main()
 {
 	int resLv=1,channel=0,size=0,stbInterval=2000;
-	cameraInit(resLv);
 	while(1) // main loop, loop forever
 	{
-		xyDiff(channel,size);
-		msleep(stbInterval);// Standby for a short period of time, avoiding too frequent updates
-		camera_update();
+		lightDetection();
+		if(run)
+		{
+			cameraInit(resLv);
+			xyDiff(channel,size);
+			msleep(stbInterval);// Standby for a short period of time, avoiding too frequent updates
+			camera_update();
+			camera_close();
+		}
+		if(stop && !run) break;
 	}
-	camera_close();
 	printf("Done!\n");
 }
