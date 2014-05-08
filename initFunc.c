@@ -1,8 +1,7 @@
 /*
 Author: Tony Xue
 E-mail: xuezhaoxin@rdfz.cn
-No copyright, No license.
-The author has no guarantee and warrantee on anything here.
+The code is released under GUN LGPL v3 license, please see "LICENSE" for details.
 */
 static void depthInit()// Initialization of the depth sensor
 {
