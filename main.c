@@ -34,6 +34,7 @@ void main()
 		lightDetection();
 		if(run)
 		{
+			//**********put the tasks that need to be done here**********
 			cameraInit(resLv);
 			xyDiff(channel,size);
 			msleep(stbInterval);// Standby for a short period of time, avoiding too frequent updates
