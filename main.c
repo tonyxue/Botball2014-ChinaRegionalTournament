@@ -4,11 +4,19 @@ E-mail: xuezhaoxin@rdfz.cn
 The code is released under GUN LGPL v3 license, please see "LICENSE" for details.
 */
 #include <stdio.h>
-#include "globalConstants.h"
 #include "initializations.c"
-#include "lightDetection.c"
-int run=0,stop=0;//indicator for whether the game has started and stopped
 
+int run=0,stop=0;//indicator for whether the game has started and stopped
+int blackLineSensorPort=1,blackLineCriticalValue=512;
+int centerX=80;// define the value of x axis of the center of the screen
+int centerY=60;// define the value of y axis of the center of the screen
+
+void lightDetection(int run, int stop)
+{
+	int lightSensorPort=0,lightIntensityCriticalValue=512;
+	if(analog10(lightSensorPort) < lightIntensityCriticalValue) run=1; //Change the run indicator to TRUE when light intensity goes below the critical value
+	if(analog10(lightSensorPort) < lightIntensityCriticalValue) stop=1;run=0; //Change the stop indicator to TRUE and run indicator to FALSE when light intensity goes above the critical value
+}
 int blackLine()
 {
 	if(analog10(blackLineSensorPort)<blackLineCriticalValue) return 1;// Return TRUE when black color is detected
@@ -26,12 +34,12 @@ int xyDiff(int channel,int size)
 	diffY=y-centerY;// calculate the differences on y axis
 	return diffX,diffY;
 }
-void main()
+int main()
 {
 	int resLv=1,channel=0,size=0,stbInterval=2000;
 	while(1) // main loop, loop forever
 	{
-		lightDetection();
+		lightDetection(run,stop);
 		if(run)
 		{
 			//**********put the tasks that need to be done here**********
@@ -44,4 +52,6 @@ void main()
 		if(stop && !run) break;
 	}
 	printf("Done!\n");
+	
+	return 0;
 }
