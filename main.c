@@ -7,12 +7,14 @@ LICENSE: GUN LGPL v3 (please see "LICENSE" for details)
 #include "initializations.c"
 
 int centerX=80,centerY=60;// define the x and y axis value of the center of the screen
-int offsetX,offsetY;//offset value for the servo
+int offsetX,offsetY,diffX,diffY;//offset value for the servo
 int giveUpValue=20; // after this many times of trying to get the reading, if no result,the robot will give up
-int offsetStatus=0;
+int servoOffsetStatus;
 int yellowChannel=1,orangeChannel=0,yellowSize=0,orangeSize=0,orangeStripChannel,yellowStripChannel;
-int liftingServoPort, rotationMotorPort, catchingServoPort, rotationMotorVelocity;// add the port number for these motors and servos here
-int putUpHangerOffset;
+int liftingServoPort=2, rotationMotorPort=1, catchingServoPort=3, rotationMotorVelocity=50;// add the port number for these motors and servos here
+int putUpHangerOffset=10;
+int distanceAcrossTheBoard=1450;
+int resLv=1;
 
 void lightDetection() // Light detection
 {
@@ -30,22 +32,83 @@ int blackLine() // Black line detection
 	if(analog10(blackLineSensorPort)>blackLineCriticalValue) return 0;// Return FALSE when white color is detected
 }
 
-void offset(int channel,int size)
+int xyDiff(int channel,int size)
 {
-	int x,y,diffX,diffY,i=0;
+	int x,y,i=0;
 	while (get_object_count(channel) == 0)
 	{
 		i++;// use this variable to count the times that the sensor detects no object, for debug purpose
 		printf ("No colored object found! This is the &d time!\n",i);
-		if (i==giveUpValue) printf("%d times reached, giving up!", giveUpValue);offsetStatus=-1;return -1; // If nothing is detected after serval times, the robot will give up the task
+		if (i==giveUpValue) printf("%d times reached, giving up!", giveUpValue);servoOffsetStatus=-1;return -1; // If nothing is detected after serval times, the robot will give up the task
 	}
 	printf("Found object!\n");
 	x=get_object_center(channel,size).x; // get the x axis value of the largest object
 	y=get_object_center(channel,size).y; // get the y axis value of the largest object
 	diffX=x-centerX;// calculate the differences on x axis
 	diffY=y-centerY;// calculate the differences on y axis
-	offsetX=5*(diffX);// The algorithm is provided by the sample code, might be wrong, IDK
+}
+
+void servoOffset(int channel,int size)
+{
+	xyDiff(channel,size);
+	offsetX=5*(diffX);// This algorithm is provided by the sample code, might be wrong, IDK
 	offsetY=5*(diffY);
+}
+
+void turnLeftDegrees(int degrees)
+{
+	set_create_total_angle(0);
+	while (get_create_total_angle<degrees)
+	{
+		create_drive_direct(0,100);
+		msleep(10); //take 50 milliseconds as a period
+		create_stop();
+	}
+}
+void turnRightDegrees(int degrees)
+{
+	set_create_total_angle(0);
+	while (get_create_total_angle<degrees)
+	{
+		create_drive_direct(100,0);
+		msleep(10); //take 50 milliseconds as a period
+		create_stop();
+	}
+}
+void positionOffset(int channel, int size) // cancel the offset of the distance
+{
+	int x,y,distance,createVelocity,createRunningTime;
+	depth_update();
+	xyDiff(channel,size);// calculate the differences on x and y axis
+	while (diffX!=0)
+	{
+		if(diffX>0)
+		{
+			//turn 90 degrees to LEFT
+			turnLeftDegrees(90);
+			create_drive_direct(createVelocity,createVelocity);
+			msleep(500); // cancel the horizontal offset
+			create_stop();
+			turnRightDegrees(90);//turn back
+		}
+		if(diffX<0)
+		{
+			//turn 90 degrees to RIGHT
+			turnRightDegrees(90);
+			create_drive_direct(createVelocity,createVelocity);
+			msleep(500); // cancel the horizontal offset
+			create_stop();
+			turnLeftDegrees(90);//turn back
+		}
+	}
+	x=get_object_center(channel,size).x;
+	y=get_object_center(channel,size).y;
+	distance=get_depth_value(x,y);
+	//the speed is (plus or minus) 20-500mm/sec
+	create_drive_direct(createVelocity,createVelocity);
+	createRunningTime=distance/createVelocity;
+	msleep(createRunningTime);
+	create_stop();
 }
 
 void run()
@@ -56,23 +119,80 @@ void run()
 
 void getCubes(int colorChoice)
 {
+	servoOffsetStatus=0;
 	if (colorChoice==1) // for getting the yellow cubes
 	{
-		offset(yellowChannel,yellowSize);
-		//run the servo and motor here
-		run();
+		positionOffset(yellowChannel,yellowSize);
+		servoOffset(yellowChannel,yellowSize); //calculate the offset
+		if(servoOffsetStatus==0) run(); // run the motors when successfully identify the cube
 	}
 	if (colorChoice==0) // for getting the orange cubes
 	{
-		offset(orangeChannel,orangeSize);
-		//run the servo and motor here
-		run();
+		positionOffset(yellowChannel,yellowSize);
+		servoOffset(orangeChannel,orangeSize); // calculate the offset
+		if(servoOffsetStatus==0) run(); // run the motors when successfully identify the cube
 	}
-//
+}
+void deliverTheCube()
+{
+	//move backward for 100 millisecond with the speed of 100 millimeter per second
+	create_drive_direct(-100,-100);
+	msleep(100);
+	//turn 90 degrees to left
+	turnLeftDegrees(90);
+	//go straightforward, full velocity
+	create_drive_direct(500,500);
+	msleep(distanceAcrossTheBoard/500);
+	create_stop();
+	//turn 90 degrees to left
+	turnLeftDegrees(90);
+	//go starightforward to get close enough
+	create_drive_direct(100,100); // go starightforward for 1 second with the speed of 100 millimeters per second
+	msleep(1000);
+	create_stop();
+}
+void backToTheShelf()
+{
+	//the reverse of deliverTheCube()
+	//move backward for 100 millisecond with the speed of 100 millimeter per second
+	create_drive_direct(-100,-100);
+	msleep(100);
+	//turn 90 degrees to left
+	turnLeftDegrees(90);
+	//go straightforward, full velocity
+	create_drive_direct(500,500);
+	msleep(distanceAcrossTheBoard/500);
+	//turn 90 degrees to left
+	turnLeftDegrees(90);
+	//go starightforward to get close enough
+	create_drive_direct(100,100); // go starightforward for 1 second with the speed of 100 millimeters per second
+	msleep(1000);
+	create_stop();
+}
+void hangerStandToShelf()
+{
+	create_drive_direct(500,500);
+	msleep(200);
+	create_stop();
+	turnRightDegrees(90);
+	create_drive_direct(500,500);
+	msleep(1000);
+	create_stop();
+	turnLeftDegrees(90);
 }
 void seekHangerStand()
 {
-	
+	create_drive_direct(500,500);
+	msleep(1000);
+	create_stop();
+	turnLeftDegrees(90);
+	create_drive_direct(500,500);
+	msleep(800);
+	create_stop();
+	turnRightDegrees(90);
+	create_drive_direct(500,500);
+	msleep(1000);
+	create_stop();
 }
 void putHangers() //put the hangers on the PVC
 {
@@ -82,10 +202,10 @@ void putHangers() //put the hangers on the PVC
 void placeCubes()
 {
 	int yMax,yCenter,diffY,offset;
-	offset(orangeStripChannel,0);//when close enough to the orange strip, calculate the offset
+	servoOffset(orangeStripChannel,0);//when close enough to the orange strip, calculate the offset
 	run();
 	yMax=get_object_bbox(orangeChannel,0).uly;
-	yCenter=get_object_center.y;
+	yCenter=get_object_center(orangeChannel,0).y;
 	diffY=yMax-yCenter;
 	offset=5*diffY;
 	set_servo_position(liftingServoPort,offset);// cancel the offset on y axis
@@ -95,25 +215,44 @@ void placeCubes()
 
 void main()
 {
-	int resLv=1,channel=0,size=0,stbyInterval=2000;
+	int createBattery;
+	printf("Start!\n");
+	cameraInit(resLv);
+	printf("Camera initialized!\n");
+	depthInit();
+	printf("Depth initialized!\n");
+	servoInit(); // Supply power to all the servos
+	printf("Servo initialized!\n");
+	create_connect();
+	createBattery=get_create_battery_capacity();
+	printf("Create connected!\n Battery: %d\n",createBattery);
 	lightDetection();// wait for the startup light
+	printf("Go!\n");
 	//
-	//yijia function 
-	//zhua cube
-	//song cube
-	//yuanlufanhui
-	//zhua cube
-	//song cube
-	//yuanlufanhui
-	//zhua cube
-	//song cube
+	//functions for the hangers
+	seekHangerStand();
+	putHangers();
 	
+	hangerStandToShelf();
 	
-	getCubes(0);//get the orange cubes
-	if (offsetStatus==-1) printf("get orange cubes failed!\n");
-	getCubes(1);//get the yellow cubes
-	if (offsetStatus==-1) printf("get yellow cubes failed!\n");
+	getCubes(0);//get the first orange cube
+	if(servoOffsetStatus==-1) printf("get the orange cube failed!\n");
+	else deliverTheCube();
+	backToTheShelf();
+	getCubes(0);//get the second orange cube
+	if(servoOffsetStatus==-1) printf("get the orange cube failed!\n");
+	else deliverTheCube();
+	backToTheShelf();
+	getCubes(1);//get the first yellow cubes
+	if(servoOffsetStatus==-1) printf("get the yellow cube failed!\n");
+	else deliverTheCube();
+	backToTheShelf();
+	getCubes(1);//get the second yellow cubes
+	if(servoOffsetStatus==-1) printf("get the yellow cube failed!\n");
+	else deliverTheCube();
+
+	//zhua cube*
+	//song cube*
 	
 	printf("Done!\n");
-	return 0;
 }

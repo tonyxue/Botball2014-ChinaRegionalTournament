@@ -3,6 +3,7 @@ Author: Tony Xue
 E-mail: xuezhaoxin@rdfz.cn
 The code is released under GUN LGPL v3 license, please see "LICENSE" for details.
 */
+
 static void depthInit()// Initialization of the depth sensor
 {
 	depth_open();
@@ -16,4 +17,13 @@ static void cameraInit(int resLv)
 	if (resLv==3) camera_open(HIGH_RES);// Start the camera and set the resolution to HIGH
 	camera_update();// Get the latest data from camera | Initialization of data
 	printf("Camera OK.\n");
+}
+
+static void servoInit()
+{
+	int liftingServoPort=2, rotationMotorPort=1, catchingServoPort=3, rotationMotorVelocity=50;// add the port number for these motors and servos here
+	enable_servo(catchingServoPort);
+	enable_servo(liftingServoPort);
+	set_servo_position(catchingServoPort,1024);
+	set_servo_position(liftingServoPort,1380);
 }
