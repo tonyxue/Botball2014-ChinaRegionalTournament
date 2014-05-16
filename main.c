@@ -1,6 +1,4 @@
 /*
-Author: Tony Xue
-E-mail: xuezhaoxin@rdfz.cn
 LICENSE: GUN LGPL v3 (please see "LICENSE" for details)
 */
 #include <stdio.h>
@@ -8,7 +6,7 @@ LICENSE: GUN LGPL v3 (please see "LICENSE" for details)
 
 int centerX=80,centerY=60;// define the x and y axis value of the center of the screen
 int offsetX,offsetY,diffX,diffY;//offset value for the servo
-int giveUpValue=20; // after this many times of trying to get the reading, if no result,the robot will give up
+int giveUpValue=20; // after this many times of trying to get the reading, if no result, the robot will give up
 int servoOffsetStatus;
 int yellowChannel=1,orangeChannel=0,yellowSize=0,orangeSize=0,orangeStripChannel,yellowStripChannel;
 int liftingServoPort=2, rotationMotorPort=1, catchingServoPort=3, rotationMotorVelocity=50;// add the port number for these motors and servos here
@@ -21,7 +19,9 @@ void lightDetection() // Light detection
 	int lightSensorPortNum=0,reading=1024,lightCriticalValue=512; //define Light Sensor port number, critical value and initialize the reading
 	while (reading>lightCriticalValue)
 	{
+		msleep(50); // prevent too frequent operation
 		reading=analog10(lightSensorPortNum);
+		printf("The reading from light sensor is %d\n",reading );
 	}
 }
 
@@ -38,14 +38,15 @@ int xyDiff(int channel,int size)
 	while (get_object_count(channel) == 0)
 	{
 		i++;// use this variable to count the times that the sensor detects no object, for debug purpose
-		printf ("No colored object found! This is the &d time!\n",i);
-		if (i==giveUpValue) printf("%d times reached, giving up!", giveUpValue);servoOffsetStatus=-1;return -1; // If nothing is detected after serval times, the robot will give up the task
+		printf ("No colored object found! This is the %d time!\n",i);
+		if (i==giveUpValue) printf("%d times reached, giving up!", giveUpValue);servoOffsetStatus=-1;return -1; // If nothing is detected after several times, the robot will give up the task
 	}
 	printf("Found object!\n");
 	x=get_object_center(channel,size).x; // get the x axis value of the largest object
 	y=get_object_center(channel,size).y; // get the y axis value of the largest object
 	diffX=x-centerX;// calculate the differences on x axis
 	diffY=y-centerY;// calculate the differences on y axis
+	return 0;
 }
 
 void servoOffset(int channel,int size)
@@ -57,21 +58,21 @@ void servoOffset(int channel,int size)
 
 void turnLeftDegrees(int degrees)
 {
-	set_create_total_angle(0);
-	while (get_create_total_angle<degrees)
+	set_create_normalized_angle(0);
+	while (get_create_normalized_angle()<degrees)
 	{
-		create_drive_direct(0,100);
-		msleep(10); //take 50 milliseconds as a period
+		create_spin_CCW(100);// turn counter clock wise(CCW)
+		msleep(10); //one period
 		create_stop();
 	}
 }
 void turnRightDegrees(int degrees)
 {
-	set_create_total_angle(0);
-	while (get_create_total_angle<degrees)
+	set_create_normalized_angle(0);
+	while (get_create_normalized_angle()<degrees)
 	{
-		create_drive_direct(100,0);
-		msleep(10); //take 50 milliseconds as a period
+		create_spin_CW(100);// turn clock wise(CW)
+		msleep(10); //one period
 		create_stop();
 	}
 }
@@ -146,8 +147,8 @@ void deliverTheCube()
 	create_stop();
 	//turn 90 degrees to left
 	turnLeftDegrees(90);
-	//go starightforward to get close enough
-	create_drive_direct(100,100); // go starightforward for 1 second with the speed of 100 millimeters per second
+	//go straightforward to get close enough
+	create_drive_direct(100,100); // go straightforward for 1 second with the speed of 100 millimeters per second
 	msleep(1000);
 	create_stop();
 }
@@ -164,33 +165,33 @@ void backToTheShelf()
 	msleep(distanceAcrossTheBoard/500);
 	//turn 90 degrees to left
 	turnLeftDegrees(90);
-	//go starightforward to get close enough
-	create_drive_direct(100,100); // go starightforward for 1 second with the speed of 100 millimeters per second
+	//go straightforward to get close enough
+	create_drive_direct(100,100); // go straightforward for 1 second with the speed of 100 millimeters per second
 	msleep(1000);
 	create_stop();
 }
 void hangerStandToShelf()
 {
-	create_drive_direct(500,500);
+	create_drive_straight(500);
 	msleep(200);
 	create_stop();
 	turnRightDegrees(90);
-	create_drive_direct(500,500);
+	create_drive_straight(500);
 	msleep(1000);
 	create_stop();
 	turnLeftDegrees(90);
 }
-void seekHangerStand()
+void goToHangerStand()
 {
-	create_drive_direct(500,500);
-	msleep(1000);
+	create_drive_straight(500);
+	msleep(500);
 	create_stop();
 	turnLeftDegrees(90);
-	create_drive_direct(500,500);
+	create_drive_straight(500);
 	msleep(800);
 	create_stop();
 	turnRightDegrees(90);
-	create_drive_direct(500,500);
+	create_drive_straight(500);
 	msleep(1000);
 	create_stop();
 }
@@ -215,26 +216,22 @@ void placeCubes()
 
 void main()
 {
-	int createBattery;
 	printf("Start!\n");
-	cameraInit(resLv);
-	printf("Camera initialized!\n");
 	depthInit();
 	printf("Depth initialized!\n");
+	cameraInit(resLv);
+	printf("Camera initialized!\n");
 	servoInit(); // Supply power to all the servos
 	printf("Servo initialized!\n");
 	create_connect();
-	createBattery=get_create_battery_capacity();
-	printf("Create connected!\n Battery: %d\n",createBattery);
+	printf("Create connected!\n Battery: %d\n",get_create_battery_charge());
 	lightDetection();// wait for the startup light
 	printf("Go!\n");
 	//
 	//functions for the hangers
-	seekHangerStand();
+	goToHangerStand();
 	putHangers();
-	
 	hangerStandToShelf();
-	
 	getCubes(0);//get the first orange cube
 	if(servoOffsetStatus==-1) printf("get the orange cube failed!\n");
 	else deliverTheCube();
