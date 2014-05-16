@@ -1,6 +1,4 @@
 /*
-Author: Tony Xue
-E-mail: xuezhaoxin@rdfz.cn
 The code is released under GUN LGPL v3 license, please see "LICENSE" for details.
 */
 
