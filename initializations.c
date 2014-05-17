@@ -1,13 +1,6 @@
 /*
 The code is released under GUN LGPL v3 license, please see "LICENSE" for details.
 */
-
-static void depthInit()// Initialization of the depth sensor
-{
-	depth_open();
-	depth_update();
-	printf("Depth sensor OK.\n");
-}
 static void cameraInit(int resLv)
 {
 	if (resLv==1) camera_open(LOW_RES);// Start the camera and set the resolution to LOW
@@ -23,5 +16,5 @@ static void servoInit()
 	enable_servo(catchingServoPort);
 	enable_servo(liftingServoPort);
 	set_servo_position(catchingServoPort,1024);
-	set_servo_position(liftingServoPort,1380);
+	set_servo_position(liftingServoPort,1400);
 }
