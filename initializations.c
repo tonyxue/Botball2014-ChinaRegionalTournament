@@ -1,6 +1,10 @@
 /*
 The code is released under GUN LGPL v3 license, please see "LICENSE" for details.
 */
+#define liftingMotorPort 2
+#define catchingServoPort 3
+#define etSensorPort 1
+#define lightSensorPortNum 0
 static void cameraInit(int resLv)
 {
 	if (resLv==1) camera_open(LOW_RES);// Start the camera and set the resolution to LOW
@@ -12,9 +16,9 @@ static void cameraInit(int resLv)
 
 static void servoInit()
 {
-	int liftingServoPort=2, rotationMotorPort=1, catchingServoPort=3, rotationMotorVelocity=50;// add the port number for these motors and servos here
+	//int liftingServoPort=2, rotationMotorPort=1, catchingServoPort=3, rotationMotorVelocity=50;// add the port number for these motors and servos here
 	enable_servo(catchingServoPort);
-	enable_servo(liftingServoPort);
+	//enable_servo(liftingServoPort);
 	set_servo_position(catchingServoPort,1024);
-	set_servo_position(liftingServoPort,1400);
+	//set_servo_position(liftingServoPort,900);
 }

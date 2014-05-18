@@ -1,23 +1,21 @@
-/*
-LICENSE: GUN LGPL v3 (please see "LICENSE" for details)
-*/
+//LICENSE: GUN LGPL v3 (please see "LICENSE" for details)
 #include <stdio.h>
 #include "initializations.c"
 
-#define liftingServoPort 2
-#define rotationMotorPort 0
+
+#define liftingMotorPort 2
 #define catchingServoPort 3
 #define etSensorPort 1
+#define lightSensorPortNum 0
 
-const int rotationMotorPower=50, lightSensorPortNum=0;
 const int centerX=80;// define the x and y axis value of the center of the screen
 const int centerY=60;
 const int giveUpValue=20; // after this many times of trying to get the reading, if no result, the robot will give up
-const int yellowChannel=0,orangeChannel=1,yellowSize=0,orangeSize=0,orangeStripChannel,yellowStripChannel;
-//const int liftingServoPort=2, rotationMotorPort=1, catchingServoPort=3, rotationMotorPower=50, lightSensorPortNum=0, etSensorPort=1;
-const int putUpHangerOffset=1200;
+const int yellowChannel=0,orangeChannel=1,yellowSize=0,orangeSize=0,orangeStripChannel=1,yellowStripChannel=0;
+const int putUpHangerOffset=850;
 const int distanceAcrossTheBoard=1450,turningSpeed=80;
 const int resLv=1;
+
 int offsetX,offsetY,diffX,diffY;//offset value for the servo
 int servoOffsetStatus;
 
@@ -117,7 +115,8 @@ void positionOffset(int channel, int size) // cancel the offset of the distance
 	}
 	x=get_object_center(channel,size).x;
 	y=get_object_center(channel,size).y;
-	distance=analog10(etSensorPort)*75/1024; //The effective distance is between 5-80 cm
+	//distance=analog10(etSensorPort)*75/1024; //The effective distance is between 5-80 cm
+
 	//the speed is (plus or minus) 20-500mm/sec
 	create_drive_straight(createVelocity);
 	msleep(distance/createVelocity);
@@ -127,7 +126,7 @@ void cancelOffset()
 {
 	//mrp(rotationMotorPort,rotationMotorPower,offsetX);
 	// add code to cancel horizontal offset here
-	set_servo_position(liftingServoPort,offsetY);
+	//set_servo_position(liftingServoPort,offsetY);
 }
 void deliverTheCube()
 {
@@ -167,33 +166,34 @@ void backToTheShelf()
 }
 void goToHangerStand()
 {
-	create_drive_straight(100);
-	msleep(4800);
+	create_drive_straight(200);
+	msleep(2750);
 	create_stop();
 	turnLeftDegrees(90);
-	create_drive_straight(100);
-	msleep(3600);
+	create_drive_straight(200);
+	msleep(2350);
 	create_stop();
 	turnRightDegrees(90);
-	create_drive_straight(100);
-	msleep(3200);
+	create_drive_straight(200);
+	msleep(2000);
 	create_stop();
 }
 void putHangers()
 {
 	//put the hangers on to the PVC
-	set_servo_position(liftingServoPort,putUpHangerOffset);
-	msleep(1000);
+	motor(liftingMotorPort,-500);
+	msleep(800);
+	off(liftingMotorPort);
+	set_servo_position(catchingServoPort,putUpHangerOffset);
+	msleep(500);
 }
 void hangerStandToShelf()
 {
 	create_drive_straight(-500);
 	msleep(300);
-	//create_stop();
 	turnRightDegrees(90);
 	create_drive_straight(500);
 	msleep(1200);
-	//create_stop();
 	turnLeftDegrees(90);
 	create_drive_straight(-100);
 	msleep(200);
@@ -224,7 +224,8 @@ void placeCubes()
 	yCenter=get_object_center(orangeChannel,0).y;
 	diffY=yMax-yCenter;
 	offset=5*diffY;
-	set_servo_position(liftingServoPort,offset);// cancel the offset on y axis
+	//set_servo_position(liftingServoPort,offset);// cancel the offset on y axis
+	motor(liftingMotorPort,-500);
 	msleep(1000);// wait for the servo to reach the position
 	set_servo_position(catchingServoPort,2047);// release the cube
 }
@@ -232,19 +233,19 @@ void main()
 {
 	printf("Start!\n");
 	set_analog_pullup(etSensorPort,0);// set the port type for the ET sensor
-	cameraInit(resLv);
-	printf("Camera initialized!\n");
-	//servoInit(); // Supply power to all the servos
-	//printf("Servo initialized!\n");
-	//create_connect();
-	//create_full();
-	//printf("Create connected!\n Battery: %d\n",get_create_battery_charge());
-	//lightDetection();// wait for the startup light
-	//printf("Go!\n");
+	//cameraInit(resLv);
+	//printf("Camera initialized!\n");
+	servoInit(); // Supply power to all the servos
+	printf("Servo initialized!\n");
+	create_connect();
+	create_full();
+	printf("Create connected!\n Battery: %d\n",get_create_battery_charge());
+	lightDetection();// wait for the startup light
+	printf("Go!\n");
 	//functions for the hangers
-	//goToHangerStand();
-	//putHangers();
-	//hangerStandToShelf();
+	goToHangerStand();
+	putHangers();
+	hangerStandToShelf();
 	/*
 	getCubes(0);//get the first orange cube
 	if(servoOffsetStatus==-1) printf("get the orange cube failed!\n");
