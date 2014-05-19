@@ -11,15 +11,15 @@
 const int centerX=80;// define the x and y axis value of the center of the screen
 const int centerY=60;
 const int giveUpValue=20; // after this many times of trying to get the reading, if no result, the robot will give up
-const int yellowChannel=0,orangeChannel=1,yellowSize=0,orangeSize=0,orangeStripChannel=1,yellowStripChannel=0;
+int yellowChannel=1,orangeChannel=0,yellowSize=0,orangeSize=0,orangeStripChannel=1,yellowStripChannel=0;
 const int putUpHangerOffset=850;
 const int distanceAcrossTheBoard=1450,turningSpeed=80;
-const int resLv=1;
+const int resLv=3;
 
 int offsetX,offsetY,diffX,diffY;//offset value for the servo
 int servoOffsetStatus;
 
-void lightDetection() // Light detection
+void lightDetection() // Light detection, checked
 {
 	int reading=1024,lightCriticalValue=512; //define Light Sensor port number, critical value and initialize the reading
 	while (reading>lightCriticalValue)
@@ -58,13 +58,7 @@ int xyDiff(int channel,int size)
 	diffY=y - centerY;// calculate the differences on y axis
 	return 0;
 }
-void servoOffset(int channel,int size)
-{
-	xyDiff(channel,size);
-	offsetX=5*(diffX);// This algorithm is provided by the sample code, might be wrong, IDK
-	offsetY=5*(diffY);
-}
-void turnLeftDegrees(int degrees)
+void turnLeftDegrees(int degrees) //checked
 {
 	int angle;
 	set_create_total_angle(0);
@@ -76,7 +70,7 @@ void turnLeftDegrees(int degrees)
 	}
 	create_stop();
 }
-void turnRightDegrees(int degrees)
+void turnRightDegrees(int degrees) //checked
 {
 	int angle;
 	set_create_total_angle(0);
@@ -122,12 +116,6 @@ void positionOffset(int channel, int size) // cancel the offset of the distance
 	msleep(distance/createVelocity);
 	create_stop();
 }
-void cancelOffset()
-{
-	//mrp(rotationMotorPort,rotationMotorPower,offsetX);
-	// add code to cancel horizontal offset here
-	//set_servo_position(liftingServoPort,offsetY);
-}
 void deliverTheCube()
 {
 	//move backward for 100 millisecond with the speed of 100 millimeter per second
@@ -164,7 +152,7 @@ void backToTheShelf()
 	msleep(1000);
 	create_stop();
 }
-void goToHangerStand()
+void goToHangerStand() //checked
 {
 	create_drive_straight(200);
 	msleep(2750);
@@ -178,7 +166,7 @@ void goToHangerStand()
 	msleep(2000);
 	create_stop();
 }
-void putHangers()
+void putHangers() //checked
 {
 	//put the hangers on to the PVC
 	motor(liftingMotorPort,-500);
@@ -196,10 +184,10 @@ void hangerStandToShelf()
 	msleep(1200);
 	turnLeftDegrees(90);
 	create_drive_straight(-100);
-	msleep(200);
+	msleep(400);
 	create_stop();
 }
-void getCubes(int colorChoice)
+/*void getCubes(int colorChoice)
 {
 	servoOffsetStatus=0;
 	if (colorChoice==1) // for getting the yellow cubes
@@ -214,8 +202,103 @@ void getCubes(int colorChoice)
 		servoOffset(orangeChannel,orangeSize); // calculate the offset
 		if(servoOffsetStatus==0) cancelOffset(); // run the motors when successfully identify the cube
 	}
+}*/
+void getOrangeCubes()
+{
+	int x,y,distance,correctedDistance;
+	camera_update();
+	while (get_object_count(orangeChannel)==0)
+		{
+			turnRightDegrees(1);
+			camera_update();
+		}
+	while (1)
+	{
+		x=get_object_center(orangeChannel,0).x;
+		y=get_object_center(orangeChannel,0).y;
+		if (get_object_count(orangeChannel)>0)
+		{
+			printf("X: %d , Y: %d\n",x,y );
+			if (x-80>0)// on the right side of the center
+			{
+				while (x-80>0)
+				{
+					turnRightDegrees(1);
+					camera_update();
+					x=get_object_center(orangeChannel,0).x;
+				}
+				turnLeftDegrees(8);// correct error
+				break;
+			}
+			if (x-80<0)
+			{
+				while (80-x>0)
+				{
+					turnLeftDegrees(1);
+					camera_update();
+					x=get_object_center(orangeChannel,0).x;
+				}
+				turnRightDegrees(8);// correct error
+				break;
+			}
+		}
+		msleep(200);
+		camera_update();
+	}
+		set_servo_position(catchingServoPort,80); // open the "hand"
+		msleep(500);
+		distance=analog10(etSensorPort)*75/1024; //In centimeter. yThe effective distance is between 5-80 cm. Greatest value when closest.
+		correctedDistance=(distance-4)*10;
+		create_drive_straight(400);
+		msleep(correctedDistance*1000/400);
+		create_stop();
+		//set_servo_position(catchingServoPort,1100); // close the "hand"
+		//msleep(500);
 }
-void placeCubes()
+void getYellowCubes()
+{
+	int x,y;
+	camera_update();
+	while (1)
+	{
+		x=get_object_center(yellowChannel,0).x;
+		y=get_object_center(yellowChannel,0).y;
+		if (get_object_count(yellowChannel)>0)
+		{
+			printf("X: %d , Y: %d\n",x,y );
+			if (x-80>0)// on the right side of the center
+			{
+				while (x-80>0)
+				{
+					turnRightDegrees(1);
+					camera_update();
+					x=get_object_center(yellowChannel,0).x;
+				}
+				break;
+			}
+			if (x-80<0)
+			{
+				while (80-x>0)
+				{
+					turnLeftDegrees(1);
+					camera_update();
+					x=get_object_center(yellowChannel,0).x;
+				}
+				break;
+			}
+		}
+		msleep(200);
+		camera_update();
+	}
+		/*set_servo_position(catchingServoPort,80); // open the "hand"
+		msleep(500);
+		create_drive_straight(200);
+		msleep(200);
+		create_stop();
+		set_servo_position(catchingServoPort,1100); // close the "hand"
+		msleep(500);*/
+}
+/*void placeCubes()
 {
 	int yMax,yCenter,diffY,offset;
 	servoOffset(orangeStripChannel,0);//when close enough to the orange strip, calculate the offset
@@ -228,32 +311,43 @@ void placeCubes()
 	motor(liftingMotorPort,-500);
 	msleep(1000);// wait for the servo to reach the position
 	set_servo_position(catchingServoPort,2047);// release the cube
-}
+}*/
 void main()
 {
 	printf("Start!\n");
-	set_analog_pullup(etSensorPort,0);// set the port type for the ET sensor
-	//cameraInit(resLv);
-	//printf("Camera initialized!\n");
+	//set_analog_pullup(etSensorPort,0);// set the port type for the ET sensor
+	cameraInit(resLv);
+	printf("Camera initialized! %d channel(s) found!\n",get_channel_count());
 	servoInit(); // Supply power to all the servos
 	printf("Servo initialized!\n");
 	create_connect();
 	create_full();
 	printf("Create connected!\n Battery: %d\n",get_create_battery_charge());
-	lightDetection();// wait for the startup light
-	printf("Go!\n");
+	//lightDetection();// wait for the startup light
+	//printf("Go!\n");
+	
 	//functions for the hangers
-	goToHangerStand();
-	putHangers();
-	hangerStandToShelf();
+	//goToHangerStand();
+	//putHangers();
+	//hangerStandToShelf();
+
+	getOrangeCubes();//get the first orange cube
+	create_drive_straight(-500);
+	msleep(1000);
+	create_stop();
+	//if (get_object_count(yellowChannel)==-1) printf("No such channel!\n");
+	//else
+	//{
+	//	printf("No object found!\n");
+	//}
 	/*
-	getCubes(0);//get the first orange cube
 	if(servoOffsetStatus==-1) printf("get the orange cube failed!\n");
 	else
 	{
 		deliverTheCube();
 		backToTheShelf();
 	}
+
 	getCubes(0);//get the second orange cube
 	if(servoOffsetStatus==-1) printf("get the orange cube failed!\n");
 	else
