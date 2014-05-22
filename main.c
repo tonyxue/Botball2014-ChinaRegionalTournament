@@ -184,7 +184,7 @@ void hangerStandToShelf()
 	msleep(1200);
 	turnLeftDegrees(90);
 	create_drive_straight(-100);
-	msleep(400);
+	msleep(1000); // stand far enough so the camera can see the whole platform
 	create_stop();
 }
 /*void getCubes(int colorChoice)
@@ -245,13 +245,13 @@ void getOrangeCubes()
 		msleep(200);
 		camera_update();
 	}
-		set_servo_position(catchingServoPort,80); // open the "hand"
+		/*set_servo_position(catchingServoPort,80); // open the "hand"
 		msleep(500);
 		distance=analog10(etSensorPort)*75/1024; //In centimeter. yThe effective distance is between 5-80 cm. Greatest value when closest.
 		correctedDistance=(distance-4)*10;
 		create_drive_straight(400);
 		msleep(correctedDistance*1000/400);
-		create_stop();
+		create_stop();*/
 		//set_servo_position(catchingServoPort,1100); // close the "hand"
 		//msleep(500);
 }
@@ -315,7 +315,7 @@ void getYellowCubes()
 void main()
 {
 	printf("Start!\n");
-	//set_analog_pullup(etSensorPort,0);// set the port type for the ET sensor
+	set_analog_pullup(etSensorPort,0);// set the port type for the ET sensor
 	cameraInit(resLv);
 	printf("Camera initialized! %d channel(s) found!\n",get_channel_count());
 	servoInit(); // Supply power to all the servos
@@ -325,16 +325,16 @@ void main()
 	printf("Create connected!\n Battery: %d\n",get_create_battery_charge());
 	//lightDetection();// wait for the startup light
 	//printf("Go!\n");
-	
+	//turnLeftDegrees(90);
 	//functions for the hangers
 	//goToHangerStand();
 	//putHangers();
 	//hangerStandToShelf();
 
 	getOrangeCubes();//get the first orange cube
-	create_drive_straight(-500);
-	msleep(1000);
-	create_stop();
+	//create_drive_straight(-500);
+	//msleep(1000);
+	//create_stop();
 	//if (get_object_count(yellowChannel)==-1) printf("No such channel!\n");
 	//else
 	//{
