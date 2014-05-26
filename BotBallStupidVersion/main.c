@@ -31,8 +31,6 @@ void motorInit()
 {
 	motor(liftingMotorPort,100);
 	msleep(7000);//2700
-	//motor(liftingMotorPort,-100);
-	//msleep(400);
 	off(liftingMotorPort);
 	printf("Motor initialized!\n");
 }
@@ -97,11 +95,9 @@ void goToHangerStand() //checked
 {
 	create_drive_straight(200);
 	while(!blackLine()){}
-	//create_drive_straight(-100);
-	//msleep(50);
 	turnLeftDegrees(84);
 	goAlongLine(2.9);
-	turnRightDegrees(80);
+	turnRightDegrees(81);
 	create_drive_straight(-100);
 	msleep(800);
 	create_stop();
@@ -110,18 +106,16 @@ void putHangers() //checked
 {
 	//put the hangers on to the PVC
 	motor(liftingMotorPort,-100);
-	msleep(850);
+	msleep(500);
 	off(liftingMotorPort);
 	create_drive_straight(200);
-	msleep(700);
+	msleep(450);
 	create_stop();
 	set_servo_position(catchingServoPort,600);
 	msleep(500);
 	motor(liftingMotorPort,-100);
-	msleep(250);
+	msleep(280);
 	off(liftingMotorPort);
-	//motor(liftingMotorPort,100);
-	//msleep(2000);
 }
 void orangeCube()
 {
@@ -315,7 +309,7 @@ void yellowCubeV2()
 		create_stop();
 	}
 }
-void main()
+int main()
 {
 	printf("Start!\n");
 	lightDetection();
@@ -326,26 +320,25 @@ void main()
 	create_connect();
 	create_full();// FULL mode, the create will execute commands under any circumstance
 	printf("Create connected!\n Battery: %d\n",get_create_battery_charge());
+	msleep(1000);
 	
-	msleep(2000);
 	turnLeftDegrees(80);// adjust heading in startup area
 	goToHangerStand();
 	putHangers();
 	
 	create_drive_straight(-200);// drive away from hanger stand
-	msleep(1000);
+	msleep(1200);
 	create_stop();
-	set_servo_position(catchingServoPort,1400); //close the hand
 	motor(liftingMotorPort,100);// lift the hand to the highest position
-	msleep(2000);
+	msleep(2200);
 	off(liftingMotorPort);
 	create_drive_straight(200);
 	while(!blackLine()){}
 	create_drive_straight(-200);
 	msleep(300);
-	turnRightDegrees(80);
+	turnRightDegrees(77);
 	goAlongLine(2.6);
-	turnLeftDegrees(80);
+	turnLeftDegrees(81);
 	create_drive_straight(200);
 	while(!get_create_rbump() && !get_create_lbump()){}
 	create_drive_straight(-200); // drive away from the PVC on the board
@@ -371,5 +364,7 @@ void main()
 	//create_stop();
 
 	yellowCubeV2();
+
+	return 0;
 
 }
