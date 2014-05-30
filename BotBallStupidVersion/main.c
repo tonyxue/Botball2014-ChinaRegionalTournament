@@ -8,6 +8,7 @@
 #define blackLineSensorPort 1
 
 const int turningSpeed=80, blackLineCriticalValue=900;
+int oFlag,yFlag;
 void lightDetection() // Light detection, checked
 {
 	int reading=1024,lightCriticalValue=512; //define Light Sensor port number, critical value and initialize the reading
@@ -119,7 +120,7 @@ void putHangers() //checked
 }
 void orangeCube()
 {
-	int flag=0;
+	//int flag=0;
 	double cTime=0,sTime;
 	create_drive_straight(200);// go straight till the button sensor is triggered
 	msleep(500);
@@ -129,7 +130,7 @@ void orangeCube()
 	sTime=seconds();
 	while(!digital(cubeButtonPort))
 	{
-		if (flag==2) break;
+		if (oFlag==2) break;
 		cTime=seconds();
 		if (cTime-sTime>3.0) // adjust the position and repeat searching when timeout reached
 		{
@@ -146,12 +147,12 @@ void orangeCube()
 			if(flag==0) set_servo_position(sensorLiftingServo,1110);// extend the sensor to its working position
 			if(flag==1) set_servo_position(sensorLiftingServo,1130);// extend the sensor to its working position
 			msleep(300);
-			flag++;
+			oFlag++;
 			sTime=seconds();
 		}
 	}
 	
-	if (flag!=2)// if the attempt(s) didn't fail
+	if (oFlag!=2)// if the attempt(s) didn't fail
 	{
 		create_drive_straight(-200);
 		msleep(230);
@@ -204,7 +205,7 @@ void orangeCube()
 }
 void yellowCube()
 {
-	int flag=0;
+	//int flag=0;
 	double cTime=0,sTime;
 	create_drive_straight(200);
 	msleep(1000);
@@ -215,7 +216,7 @@ void yellowCube()
 	sTime=seconds();
 	while(!digital(cubeButtonPort))
 	{
-		if (flag==3) break;
+		if (yFlag==3) break;
 		cTime=seconds();
 		if (cTime-sTime>2.7)
 		{
@@ -226,11 +227,11 @@ void yellowCube()
 			msleep(500);
 			turnRightDegrees(80);
 			create_drive_straight(200);
-			flag++;
+			yFlag++;
 			sTime=seconds();
 		}
 	}
-	if (flag!=4)
+	if (yFlag!=4)
 	{
 		create_stop();
 		motor(liftingMotorPort,100);// lift the hand a bit
@@ -345,23 +346,40 @@ int main()
 	msleep(900);
 	turnRightDegrees(78);
 	orangeCube();
-	/********************************************************************/
-	// go for yellow cube
-	create_drive_straight(-200);
-	msleep(500);
-	turnLeftDegrees(78);
-	create_drive_straight(500); //rush
-	msleep(2700);
-	turnLeftDegrees(76);
-	create_drive_straight(200);
-	while(!blackLine()){}
-	create_drive_straight(-200);
-	msleep(400);
-	create_stop();
-	set_servo_position(sensorLiftingServo,50);// retract the button sensor to avoid collision
-	msleep(2000);
-	turnRightDegrees(76);
-	//create_stop();
+	if(oFlag!=2)
+	{
+		/********************************************************************/
+		// go for yellow cube
+		create_drive_straight(-200);
+		msleep(500);
+		turnLeftDegrees(78);
+		create_drive_straight(500); //rush
+		msleep(2700);
+		turnLeftDegrees(76);
+		create_drive_straight(200);
+		while(!blackLine()){}
+		create_drive_straight(-200);
+		msleep(400);
+		create_stop();
+		set_servo_position(sensorLiftingServo,50);// retract the button sensor to avoid collision
+		msleep(2000);
+		turnRightDegrees(76);
+	}
+	if(oFlag==2) // to be checked
+	{
+		turnLeftDegrees(77);
+		create_drive_straight(-200);
+		while(!blackLine()){}
+		turnLeftDegrees(77);
+		create_drive_straight(200);
+		msleep(2000);
+		turnRightDegrees(77);
+		create_drive_straight(200);
+		while(!get_create_lbump() && !get_create_rbump()){}
+		create_drive_straight(-200);
+		msleep(1500);
+		turnRightDegrees(77);
+	}
 
 	yellowCubeV2();
 
