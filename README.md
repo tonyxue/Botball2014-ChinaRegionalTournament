@@ -1,9 +1,8 @@
-The RegionalTournament branch
-=============================
-This branch contains exactly the code we used in the regional tournament of China.
+Author
+======
+Zhaoxin "Tony" Xue
 
-There is some later modifications which can be found in the [StupidVersion branch](https://github.com/tonyxue/RDFZBotball2014/tree/StupidVersion)
-
+E-mail:xuezxbb@gmail.com (I speak English, Chinese, German and Swedish)
 License
 =======
 The code is released under GNU LGPL V3 license, see ```LICENSE``` for details.
