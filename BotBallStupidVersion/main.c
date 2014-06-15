@@ -322,9 +322,9 @@ int main()
 	printf("Create connected!\n Battery: %d\n",get_create_battery_charge());
 	msleep(1000);
 	
-	turnLeftDegrees(80);// adjust heading in startup area
-	goToHangerRack();// create move to the hanger rack
-	putHangers();// the "hand" put hangers on the rack
+	turnLeftDegrees(80); // adjust heading in startup area
+	goToHangerRack(); // create move to the hanger rack
+	putHangers(); // the "hand" put hangers on the rack
 	
 	create_drive_straight(-200);// drive away from hanger rack
 	msleep(1200);
